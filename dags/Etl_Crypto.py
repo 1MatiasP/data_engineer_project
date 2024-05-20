@@ -39,7 +39,7 @@ def create_redshift_connection():
     url = "data-engineer-cluster.cyhh5bfevlmn.us-east-1.redshift.amazonaws.com"
     data_base = "data-engineer-database"
     user = "matiaspereyra_coderhouse"
-    pwd = "oDSU1mg8L8"
+    pwd = ""
     try:
         conn = psycopg2.connect(
             host=url,
