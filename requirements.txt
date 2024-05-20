@@ -1,0 +1,5 @@
+requests
+pandas
+psycopg2
+datetime
+apache-airflow
