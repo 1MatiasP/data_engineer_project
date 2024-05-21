@@ -2,6 +2,8 @@ import requests
 import pandas as pd
 import psycopg2
 from datetime import datetime
+from airflow.models import Variable
+
 
 def get_crypto_data():
     # URL base de la API de CoinCap
@@ -39,7 +41,7 @@ def create_redshift_connection():
     url = "data-engineer-cluster.cyhh5bfevlmn.us-east-1.redshift.amazonaws.com"
     data_base = "data-engineer-database"
     user = "matiaspereyra_coderhouse"
-    pwd = ""
+    pwd = Variable.get("redshift_secret")
     try:
         conn = psycopg2.connect(
             host=url,
