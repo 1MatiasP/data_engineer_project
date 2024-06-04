@@ -4,7 +4,7 @@ from airflow.operators.python_operator import PythonOperator
 from datetime import datetime, timedelta
 
 # Importar las funciones del script modificado
-from Etl_Crypto import get_crypto_data, create_redshift_connection, create_crypto_table, insert_data_into_redshift
+from Etl_Crypto import get_crypto_data, create_redshift_connection, create_crypto_table, insert_data_into_redshift, send_email
 
 # Definir los argumentos predeterminados del DAG
 default_args = {
@@ -49,8 +49,13 @@ insert_data_into_redshift_task = PythonOperator(
     dag=dag,
 )
 
+send_email_task = PythonOperator(
+    task_id='send_email',
+    python_callable=send_email,
+    op_args=['Carga de datos incompleta', 'Los datos de criptomonedas no fueron cargados a Redshift exitosamente.'],
+    trigger_rule='one_failed',  # Se ejecutará solo si alguna tarea falla
+    dag=dag
+)
 
-
-get_crypto_data_task >> create_redshift_connection_task >> create_crypto_table_task >> insert_data_into_redshift_task
-
-
+# Definir el flujo de tareas
+get_crypto_data_task >> create_redshift_connection_task >> create_crypto_table_task >> insert_data_into_redshift_task >> send_email_task

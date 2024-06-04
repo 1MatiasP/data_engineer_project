@@ -1,8 +1,35 @@
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 import requests
 import pandas as pd
 import psycopg2
 from datetime import datetime
 from airflow.models import Variable
+
+def send_email(subject, body_text):
+    Pass_Email = Variable.get("gmail_secret")    
+    smtp_server = 'smtp.gmail.com'
+    smtp_port = 587
+    sender_email = 'machimizado@gmail.com'
+    password = Pass_Email
+
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = sender_email
+        msg['To'] = sender_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body_text, 'plain'))
+
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(sender_email, password)
+            server.send_message(msg)
+        print('El email fue enviado correctamente.')
+
+    except Exception as exception:
+        print(exception)
+        print('El email no se pudo enviar.')
 
 
 def get_crypto_data():
