@@ -7,13 +7,15 @@ import psycopg2
 from datetime import datetime
 from airflow.models import Variable
 
-def send_email(subject, body_text):
-    Pass_Email = Variable.get("gmail_secret")    
-    smtp_server = 'smtp.gmail.com'
-    smtp_port = 587
-    sender_email = 'machimizado@gmail.com'
-    password = Pass_Email
+# Variables
+Pass_Email = Variable.get("gmail_secret")
+smtp_server = 'smtp.gmail.com'
+smtp_port = 587
+sender_email = 'machimizado@gmail.com'
+password = Pass_Email 
 
+# Función para enviar email
+def send_email(subject, body_text):
     try:
         msg = MIMEMultipart()
         msg['From'] = sender_email
@@ -114,18 +116,35 @@ def create_crypto_table(conn):
     except Exception as e:
         print("Error al crear la tabla de criptomonedas en Redshift:", e)
 
-def insert_data_into_redshift(conn, df):
-    # Crear cursor
-    cursor = conn.cursor()
-    # Eliminar los registros existentes
-    cursor.execute("DELETE FROM crypto")
-    conn.commit()
-    # Insertar registros
-    for index, row in df.iterrows():
-        cursor.execute("INSERT INTO crypto (id, rank, name, supply, maxSupply, marketCapUsd, volumeUsd24Hr, priceUsd, changePercent24Hr, vwap24Hr, explorer, fecha_consulta, fecha_insercion) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                       (row['id'], row['rank'], row['name'], row['supply'], row['maxSupply'], row['marketCapUsd'], row['volumeUsd24Hr'], row['priceUsd'], row['changePercent24Hr'], row['vwap24Hr'], row['explorer'], row['fecha_consulta'], datetime.now()))
-    # Confirmar la inserción de los registros
-    conn.commit()
+def insert_data_into_redshift(conn_function, df):
+    # Obtener el objeto de conexión
+    conn = conn_function()
+
+    if conn is not None:
+        try:
+            # Crear cursor
+            cursor = conn.cursor()
+            
+            # Eliminar los registros existentes
+            cursor.execute("DELETE FROM crypto")
+            conn.commit()
+
+            # Insertar registros
+            for index, row in df.iterrows():
+                cursor.execute("INSERT INTO crypto (id, rank, name, supply, maxSupply, marketCapUsd, volumeUsd24Hr, priceUsd, changePercent24Hr, vwap24Hr, explorer, fecha_consulta, fecha_insercion) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                               (row['id'], row['rank'], row['name'], row['supply'], row['maxSupply'], row['marketCapUsd'], row['volumeUsd24Hr'], row['priceUsd'], row['changePercent24Hr'], row['vwap24Hr'], row['explorer'], row['fecha_consulta'], datetime.now()))
+            # Confirmar la inserción de los registros
+            conn.commit()
+            print("Registros insertados correctamente en Redshift.")
+        except Exception as e:
+            print("Error al insertar registros en Redshift:", e)
+            conn.rollback()  # Revertir los cambios en caso de error
+        finally:
+            # Cerrar el cursor y la conexión
+            cursor.close()
+            conn.close()
+    else:
+        print("No se pudo establecer conexión a Redshift.")
 
 
 

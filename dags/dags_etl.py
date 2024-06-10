@@ -39,22 +39,23 @@ create_redshift_connection_task = PythonOperator(
 create_crypto_table_task = PythonOperator(
     task_id='create_crypto_table',
     python_callable=create_crypto_table,
+    op_kwargs={'conn': create_redshift_connection()},  # Pasar el objeto de conexión como argumento
     dag=dag,
 )
 
 insert_data_into_redshift_task = PythonOperator(
     task_id='insert_data_into_redshift',
     python_callable=insert_data_into_redshift,
-    op_kwargs={'conn': create_redshift_connection(), 'df': get_crypto_data()},
+    op_kwargs={'conn_function': create_redshift_connection, 'df': get_crypto_data()},
     dag=dag,
 )
+
 
 send_email_task = PythonOperator(
     task_id='send_email',
     python_callable=send_email,
-    op_args=['Carga de datos incompleta', 'Los datos de criptomonedas no fueron cargados a Redshift exitosamente.'],
-    trigger_rule='one_failed',  # Se ejecutará solo si alguna tarea falla
-    dag=dag
+    op_kwargs={'subject': 'Carga de datos', 'body_text': 'Los datos fueron cargados a la base de datos exitosamente.'},
+    dag=dag,
 )
 
 # Definir el flujo de tareas
